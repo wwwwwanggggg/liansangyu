@@ -13,24 +13,24 @@ type NewTaskInfo struct {
 	Starttime *time.Time `json:"start_time" binding:"required"`
 	Endtime   *time.Time `json:"end_time" binding:"required"`
 
-	Longtitude float64 `json:"longtitude" binding:"required"`
-	Latitude   float64 `json:"latitude" binding:"required"`
-	Desc       string  `json:"desc" binding:"required"`
+	Longitude float64 `json:"longitude" binding:"required"`
+	Latitude  float64 `json:"latitude" binding:"required"`
+	Desc      string  `json:"desc" binding:"required"`
 
 	Number uint16 `json:"number" binding:"required"`
 }
 
 func (Task) New(info NewTaskInfo, openid string) error {
 	if err := model.DB.Create(&model.Task{
-		Title:      info.Title,
-		Starttime:  info.Starttime,
-		Endtime:    info.Endtime,
-		Longtitude: info.Longtitude,
-		Latitude:   info.Latitude,
-		Desc:       info.Desc,
-		Publisher:  openid,
-		Number:     info.Number,
-		Already:    0,
+		Title:     info.Title,
+		Starttime: info.Starttime,
+		Endtime:   info.Endtime,
+		Longitude: info.Longitude,
+		Latitude:  info.Latitude,
+		Desc:      info.Desc,
+		Publisher: openid,
+		Number:    info.Number,
+		Already:   0,
 	}).Error; err != nil {
 		return errors.New("创建任务失败")
 	}
@@ -44,8 +44,8 @@ type UpdateTaskInfo struct {
 	Starttime *time.Time `json:"start_time" binding:"required"`
 	Endtime   *time.Time `json:"end_time" binding:"required"`
 
-	Longtitude float64 `json:"longtitude" binding:"required"`
-	Latitude   float64 `json:"latitude" binding:"required"`
+	Longitude float64 `json:"longitude" binding:"required"`
+	Latitude  float64 `json:"latitude" binding:"required"`
 
 	Desc   string `json:"desc" binding:"required"`
 	Number uint16 `json:"number" binding:"required"`
@@ -79,12 +79,12 @@ func (Task) Update(info UpdateTaskInfo, id int, openid string) error {
 	}
 
 	if err := model.DB.Model(&task).Updates(model.Task{
-		Title:      info.Title,
-		Starttime:  info.Starttime,
-		Endtime:    info.Endtime,
-		Longtitude: info.Longtitude,
-		Latitude:   info.Latitude,
-		Desc:       info.Desc,
+		Title:     info.Title,
+		Starttime: info.Starttime,
+		Endtime:   info.Endtime,
+		Longitude: info.Longitude,
+		Latitude:  info.Latitude,
+		Desc:      info.Desc,
 	}).Error; err != nil {
 		return errors.New("更新任务失败")
 	}

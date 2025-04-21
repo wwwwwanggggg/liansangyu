@@ -12,8 +12,8 @@ type Task struct {
 
 	Participants []Volunteer `gorm:"many2many:task_participants"`
 
-	Longtitude float64 `gorm:"column:longtitude;not null" json:"longtitude"`
-	Latitude   float64 `gorm:"column:latitude;not null" json:"latitude"`
+	Longitude float64 `gorm:"column:longitude;not null" json:"longitude"`
+	Latitude  float64 `gorm:"column:latitude;not null" json:"latitude"`
 
 	Desc string `gorm:"column:desc;not null" json:"desc"`
 

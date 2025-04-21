@@ -136,8 +136,8 @@ type TaskInfoResp struct {
 }
 
 type Location struct {
-	Latitude   float64 `json:"latitude"`
-	Longtitude float64 `json:"longtitude"`
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
 }
 
 func (Volunteer) GetTasks(openid string, loc Location) (TaskInfoResp, error) {
@@ -161,12 +161,12 @@ func (Volunteer) GetTasks(openid string, loc Location) (TaskInfoResp, error) {
 	for _, t := range tasks {
 		if t.Already >= t.Number {
 			res.FullNumberTasks = append(res.FullNumberTasks, t)
-		} else if loc.Latitude == 0 || loc.Longtitude == 0 {
+		} else if loc.Latitude == 0 || loc.Longitude == 0 {
 			res.FarTasks = append(res.FarTasks, t)
 		} else {
 			_, dis := haversine.Distance(
-				haversine.Coord{Lat: loc.Latitude, Lon: loc.Longtitude},
-				haversine.Coord{Lat: t.Latitude, Lon: t.Longtitude},
+				haversine.Coord{Lat: loc.Latitude, Lon: loc.Longitude},
+				haversine.Coord{Lat: t.Latitude, Lon: t.Longitude},
 			)
 			fmt.Println("dis:", dis)
 			if dis < 5 {

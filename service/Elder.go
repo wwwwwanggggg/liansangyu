@@ -13,8 +13,8 @@ type Elder struct{}
 type UpdateElderInfo struct {
 	Disease string `json:"disease"`
 
-	Longtitude float64 `json:"longtitude" binding:"required"`
-	Latitude   float64 `json:"latitude" binding:"required"`
+	Longitude float64 `json:"longitude" binding:"required"`
+	Latitude  float64 `json:"latitude" binding:"required"`
 }
 
 func (Elder) Update(info UpdateElderInfo, openid string) error {
@@ -33,10 +33,10 @@ func (Elder) Update(info UpdateElderInfo, openid string) error {
 	if err := model.DB.Where("openid = ?", user.Openid).First(&e).Error; errors.Is(err, gorm.ErrRecordNotFound) {
 		// 第一次完善志愿者信息
 		e = model.Elder{
-			Openid:     user.Openid,
-			Disease:    info.Disease,
-			Longtitude: info.Longtitude,
-			Latitude:   info.Latitude,
+			Openid:    user.Openid,
+			Disease:   info.Disease,
+			Longitude: info.Longitude,
+			Latitude:  info.Latitude,
 		}
 		if err := model.DB.Create(&e).Error; err != nil {
 			return errors.New("创建老人信息失败")

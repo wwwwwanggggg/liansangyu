@@ -145,7 +145,7 @@ func (Volunteer) GetTasks(c *gin.Context) {
 		return
 	}
 
-	if !(loc.Latitude < 90 && loc.Latitude > -90 && loc.Longtitude < 180 && loc.Longtitude > -180) {
+	if !(loc.Latitude < 90 && loc.Latitude > -90 && loc.Longitude < 180 && loc.Longitude > -180) {
 		c.Error(common.ErrNew(errors.New("请输入合法的经纬度"), common.ParamErr))
 		return
 	}
