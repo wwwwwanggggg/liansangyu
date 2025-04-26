@@ -1,3 +1,3 @@
 package controller
 
-type User struct{}
+type Task struct{}

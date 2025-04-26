@@ -3,9 +3,7 @@ package model
 import "time"
 
 type Volunteer struct {
-	BaseModel
-
-	Openid string `gorm:"column:openid;type:VARCHAR(255);not null"`
+	Openid string `gorm:"not null;primaryKey;type:VARCHAR(191)" json:"openid"`
 
 	School string `gorm:"column:school;type:VARCHAR(40);not null" json:"school"`
 	Clazz  string `gorm:"column:clazz;type:VARCHAR(10);not null;comment:班级" json:"clazz"`

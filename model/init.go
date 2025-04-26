@@ -63,7 +63,15 @@ func initModel() {
 
 	// example
 	// begin
-	DB.AutoMigrate(&User{}, &Volunteer{}, &Monitor{}, &Task{}, &Elder{})
+	DB.AutoMigrate(&User{},
+		&Volunteer{},
+		&Monitor{},
+		&Task{},
+		&Elder{},
+		&Organization{},
+		&OrganizationAdmins{},
+		&OrganizationElders{},
+		&OrganizationVolunteers{})
 	//end
 
 }

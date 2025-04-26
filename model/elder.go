@@ -1,9 +1,7 @@
 package model
 
 type Elder struct {
-	BaseModel
-
-	Openid  string `gorm:"column:openid;type:VARCHAR(255);not null" json:"openid"`
+	Openid  string `gorm:"column:openid;primaryKey;not null;type:VARCHAR(191)" json:"openid"`
 	Disease string `gorm:"column:disease" json:"disease"`
 
 	Longitude float64 `gorm:"column:longitude;comment:经度;not null" json:"longitude"`
