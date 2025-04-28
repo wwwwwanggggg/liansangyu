@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"liansangyu/model"
+	"sort"
 	"time"
 
+	"github.com/umahmood/haversine"
 	"gorm.io/gorm"
 )
 
@@ -36,7 +38,7 @@ func getV(openid string) (model.Volunteer, error) {
 	return v, nil
 }
 
-// 注册不作为接口暴露，由User处调用
+// 作为接口暴露，完善个人信息之后使用
 func (Volunteer) Register(Openid string, info UVInfo) error {
 	_, err := getV(Openid)
 	if err != nil && !(err.Error() == "没有对应志愿者信息") {
@@ -353,4 +355,82 @@ func (Volunteer) Checkout(Openid string, taskID int) error {
 	return nil
 }
 
-func (Volunteer) GetTaskList() {}
+type Location struct {
+	Longitide float64 `json:"longitude"`
+	Latitude  float64 `json:"latitude"`
+}
+
+type Resp struct {
+	NearBy       []model.Task `json:"near_by"`
+	Far          []model.Task `json:"far"`
+	Full         []model.Task `json:"full"`
+	Participated []model.Task `json:"participated"`
+}
+
+func (Resp) New() Resp {
+	r := Resp{}
+	r.NearBy = []model.Task{}
+	r.Far = []model.Task{}
+	r.Full = []model.Task{}
+	r.Participated = []model.Task{}
+	return r
+}
+
+type ByNumber []model.Task
+
+func (h ByNumber) Len() int {
+	return len(h)
+}
+
+func (h ByNumber) Swap(i, j int) {
+	h[i], h[j] = h[j], h[i]
+}
+
+// 从大到小
+func (h ByNumber) Less(i, j int) bool {
+	return h[i].Number > h[j].Number
+}
+
+func (Volunteer) GetTaskList(openid string, loc Location) (Resp, error) {
+	v, err := getV(openid)
+	if err != nil {
+		return Resp{}, err
+	}
+
+	var tasks []model.Task
+	if err := model.DB.Preload("Participants").Find(&tasks).Error; err != nil {
+		fmt.Println(err)
+		return Resp{}, errors.New("查询任务失败")
+	}
+	r := Resp{}.New()
+	sort.Sort(ByNumber(tasks))
+	if loc.Latitude == 0 || loc.Longitide == 0 {
+		r.Far = tasks
+		return r, nil
+	}
+
+	for _, t := range tasks {
+		if Find(t.Participants, v, Vequals) != -1 {
+			r.Participated = append(r.Participated, t)
+			continue
+		}
+		if t.Already >= t.Number {
+			r.Full = append(r.Full, t)
+			continue
+		}
+		_, km := haversine.Distance(haversine.Coord{
+			Lat: loc.Latitude,
+			Lon: loc.Longitide,
+		}, haversine.Coord{
+			Lat: t.Latitude,
+			Lon: t.Longitude,
+		})
+		if km <= 5 {
+			r.NearBy = append(r.NearBy, t)
+		} else {
+			r.Far = append(r.Far, t)
+		}
+	}
+
+	return r, nil
+}

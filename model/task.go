@@ -10,7 +10,7 @@ type Task struct {
 	Starttime *time.Time `gorm:"column:start_time;not null;" json:"start_time"`
 	Endtime   *time.Time `gorm:"column:end_time;not null" json:"end_time"`
 
-	Participants []Volunteer `gorm:"many2many:task_participants"`
+	Participants []Volunteer `gorm:"many2many:task_participants;constraint:OnDelete:CASCADE;"`
 
 	Longitude float64 `gorm:"column:longitude;not null" json:"longitude"`
 	Latitude  float64 `gorm:"column:latitude;not null" json:"latitude"`

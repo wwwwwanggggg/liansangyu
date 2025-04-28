@@ -71,7 +71,8 @@ func initModel() {
 		&Organization{},
 		&OrganizationAdmins{},
 		&OrganizationElders{},
-		&OrganizationVolunteers{})
+		&OrganizationVolunteers{},
+		&Notification{})
 	//end
 
 }

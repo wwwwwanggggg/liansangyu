@@ -5,6 +5,8 @@ import "time"
 type Volunteer struct {
 	Openid string `gorm:"not null;primaryKey;type:VARCHAR(191)" json:"openid"`
 
+	TimeModel
+
 	School string `gorm:"column:school;type:VARCHAR(40);not null" json:"school"`
 	Clazz  string `gorm:"column:clazz;type:VARCHAR(10);not null;comment:班级" json:"clazz"`
 	Skills string `gorm:"column:skills;type:json" json:"skills"`

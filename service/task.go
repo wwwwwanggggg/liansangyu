@@ -2,106 +2,91 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"liansangyu/model"
 	"time"
+
+	"github.com/jinzhu/copier"
 )
 
 type Task struct{}
-
-type NewTaskInfo struct {
-	Title     string     `json:"title" binding:"required"`
-	Starttime *time.Time `json:"start_time" binding:"required"`
-	Endtime   *time.Time `json:"end_time" binding:"required"`
-
-	Longitude float64 `json:"longitude" binding:"required"`
-	Latitude  float64 `json:"latitude" binding:"required"`
-	Desc      string  `json:"desc" binding:"required"`
-
-	Number uint16 `json:"number" binding:"required"`
-}
-
-func (Task) New(info NewTaskInfo, openid string) error {
-	if err := model.DB.Create(&model.Task{
-		Title:     info.Title,
-		Starttime: info.Starttime,
-		Endtime:   info.Endtime,
-		Longitude: info.Longitude,
-		Latitude:  info.Latitude,
-		Desc:      info.Desc,
-		Publisher: openid,
-		Number:    info.Number,
-		Already:   0,
-	}).Error; err != nil {
-		return errors.New("创建任务失败")
-	}
-
-	return nil
-}
 
 type UpdateTaskInfo struct {
 	Title string `json:"title" binding:"required"`
 
 	Starttime *time.Time `json:"start_time" binding:"required"`
 	Endtime   *time.Time `json:"end_time" binding:"required"`
-
-	Longitude float64 `json:"longitude" binding:"required"`
-	Latitude  float64 `json:"latitude" binding:"required"`
+	Longitude float64    `json:"longitude" binding:"required"`
+	Latitude  float64    `json:"latitude" binding:"required"`
 
 	Desc   string `json:"desc" binding:"required"`
 	Number uint16 `json:"number" binding:"required"`
 }
 
-func (Task) Update(info UpdateTaskInfo, id int, openid string) error {
-	var task model.Task
-	if err := model.DB.Where("id = ?", id).First(&task).Error; err != nil {
-		return errors.New("任务不存在")
+func (Task) New(openid string, info UpdateTaskInfo) error {
+	v, err := getV(openid)
+	if err != nil {
+		return err
 	}
 
-	if task.Publisher != openid {
-		return errors.New("你不是该任务的发布者")
+	var t model.Task
+
+	copier.Copy(&t, &info)
+
+	t.Publisher = v.Openid
+	if err := model.DB.Model(&model.Task{}).Create(&t).Error; err != nil {
+		fmt.Println(err)
+		return errors.New("创建任务失败")
 	}
 
-	if task.Starttime.Before(time.Now()) {
-		return errors.New("任务已开始，无法修改")
-	}
-	if task.Endtime.Before(time.Now()) {
-		return errors.New("任务已结束，无法修改")
-	}
-	if task.Already > info.Number {
-		return errors.New("任务参与人数已超过上限，无法修改")
-	}
-
-	if info.Starttime.Before(time.Now()) {
-		return errors.New("任务开始时间不能早于当前时间")
-	}
-	if info.Endtime.Before(time.Now()) {
-		return errors.New("任务结束时间不能早于当前时间")
-	}
-
-	if err := model.DB.Model(&task).Updates(model.Task{
-		Title:     info.Title,
-		Starttime: info.Starttime,
-		Endtime:   info.Endtime,
-		Longitude: info.Longitude,
-		Latitude:  info.Latitude,
-		Desc:      info.Desc,
-	}).Error; err != nil {
-		return errors.New("更新任务失败")
-	}
 	return nil
 }
 
-func (Task) Delete(openid string, id int) error {
-	var task model.Task
-	if err := model.DB.Where("id = ?", id).First(&task).Error; err != nil {
-		return errors.New("任务不存在")
+func DoAble(openid string, taskID int) (v model.Volunteer, t model.Task, e error) {
+	v, err := getV(openid)
+	if err != nil {
+		return v, t, err
+	}
+	t, err = getTask(taskID)
+	if err != nil {
+		return v, t, err
 	}
 
-	if task.Publisher != openid {
-		return errors.New("你不是该任务的发布者")
+	if t.Publisher != v.Openid {
+		return v, t, errors.New("您不是这个任务的发布者，无法修改此任务")
 	}
 
-	if err := model.DB.Delete(&task).Error; err != nil {
+	if time.Now().After(*t.Starttime) {
+		return v, t, errors.New("此任务已经开始或结束，无法修改")
+	}
+	return v, t, nil
+}
+
+func (Task) Update(openid string, taskID int, info UpdateTaskInfo) error {
+	_, t, err := DoAble(openid, taskID)
+	if err != nil {
+		return err
+	}
+	if info.Number < t.Already {
+		return errors.New("当前报名的任务已经超过您传入的人数")
+	}
+
+	if err := model.DB.Table("tasks").Where("id = ?", taskID).Updates(&info).Error; err != nil {
+		fmt.Println(err)
+		return errors.New("更新失败")
+	}
+	return nil
+
+}
+
+func (Task) Delete(openid string, taskID int) error {
+	_, t, err := DoAble(openid, taskID)
+	if err != nil {
+		return err
+	}
+
+	if err := model.DB.Delete(&t).Error; err != nil {
+		fmt.Println(err)
 		return errors.New("删除任务失败")
 	}
 	return nil
