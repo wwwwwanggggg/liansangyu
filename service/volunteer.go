@@ -1,7 +1,6 @@
 package service
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"liansangyu/model"
@@ -16,9 +15,9 @@ type Volunteer struct {
 }
 
 type UVInfo struct {
-	School string   `json:"school" binding:"required"`
-	Clazz  string   `json:"clazz" binding:"required"`
-	Skills []string `json:"skills" binding:"required"`
+	School string `json:"school" binding:"required"`
+	Clazz  string `json:"clazz" binding:"required"`
+	Skills string `json:"skills" binding:"required"`
 }
 
 func getV(openid string) (model.Volunteer, error) {
@@ -53,13 +52,11 @@ func (Volunteer) Register(Openid string, info UVInfo) error {
 		return errors.New("此账号已经注册过志愿者了")
 	}
 
-	// 序列化json不会出错的
-	j, _ := json.Marshal(info.Skills)
 	v := model.Volunteer{
 		Openid: Openid,
 		School: info.School,
 		Clazz:  info.Clazz,
-		Skills: string(j),
+		Skills: info.Skills,
 	}
 
 	if err := model.DB.Create(&v).Error; err != nil {
