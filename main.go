@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"liansangyu/config"
 	"liansangyu/router"
 
@@ -10,10 +9,10 @@ import (
 
 func main() {
 	gin.SetMode(config.Config.AppMode)
-	srv := router.NewServer()
+	r := router.NewServer()
 
-	if err := srv.ListenAndServe(); err != nil {
-		fmt.Printf("fail to init server: %s\n", err.Error())
+	err := r.RunTLS("0.0.0.0:8088", "server.crt", "server.key")
+	if err != nil {
 		panic(err)
 	}
 }

@@ -10,3 +10,7 @@ test
 log.json
 bin
 /.vscode
+
+server.crt
+server.csr
+server.key

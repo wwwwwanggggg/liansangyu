@@ -42,7 +42,7 @@ func (Monitor) Add(openid string, elderPhone string) error {
 		return errors.New("此号码对应的用户不是老人")
 	}
 
-	elder, err := getE(openid)
+	elder, err := getE(e.Openid)
 
 	if err != nil {
 		return err
@@ -56,12 +56,11 @@ func (Monitor) Add(openid string, elderPhone string) error {
 		monitor := model.Monitor{
 			Openid: openid,
 
-			Elder:       elder,
 			ElderOpenid: elder.Openid,
 		}
-		if err := model.DB.Model(&u).Association("monitor").Append(&monitor); err != nil {
+		if err := model.DB.Create(&monitor).Error; err != nil {
 			fmt.Println(err)
-			return errors.New("更新用户信息出错")
+			return errors.New("添加监护人信息失败")
 		}
 		return nil
 	}); err != nil {
