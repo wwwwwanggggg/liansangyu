@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/gob"
+	"fmt"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -45,6 +46,7 @@ func SessionDelete(c *gin.Context, name string) {
 func GetOpenid(c *gin.Context, name string) (string, bool) {
 	session := SessionGet(c, "user-session")
 	userSession, ok := session.(UserSession)
+	fmt.Println("getOpenid", userSession, ok)
 
 	return userSession.Openid, ok
 }

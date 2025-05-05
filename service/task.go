@@ -14,8 +14,8 @@ type Task struct{}
 type UpdateTaskInfo struct {
 	Title string `json:"title" binding:"required"`
 
-	Starttime *time.Time `json:"start_time" binding:"required"`
-	Endtime   *time.Time `json:"end_time" binding:"required"`
+	Starttime *time.Time `json:"start_time" binding:"required" gorm:"column:start_time"`
+	Endtime   *time.Time `json:"end_time" binding:"required" gorm:"column:end_time"`
 	Longitude float64    `json:"longitude" binding:"required"`
 	Latitude  float64    `json:"latitude" binding:"required"`
 
@@ -23,8 +23,20 @@ type UpdateTaskInfo struct {
 	Number uint16 `json:"number" binding:"required"`
 }
 
-func (Task) New(openid string, info UpdateTaskInfo) error {
-	v, err := getV(openid)
+func (Task) New(openid string, info UpdateTaskInfo, pType string) error {
+
+	if time.Now().Add(time.Hour).After(*info.Starttime) {
+		return errors.New("您不能发布一小时之内或者当前时间之前的任务")
+	}
+
+	if !info.Endtime.After(*info.Starttime) {
+		return errors.New("结束时间不能比开始时间早")
+	}
+
+	if pType != "elder" && pType != "organization" {
+		return errors.New("发布任务的身份只能是组织或者老人")
+	}
+	u, err := getU(openid)
 	if err != nil {
 		return err
 	}
@@ -33,7 +45,8 @@ func (Task) New(openid string, info UpdateTaskInfo) error {
 
 	copier.Copy(&t, &info)
 
-	t.Publisher = v.Openid
+	t.Publisher = u.Openid
+	t.PublisherType = pType
 	if err := model.DB.Model(&model.Task{}).Create(&t).Error; err != nil {
 		fmt.Println(err)
 		return errors.New("创建任务失败")
@@ -42,8 +55,8 @@ func (Task) New(openid string, info UpdateTaskInfo) error {
 	return nil
 }
 
-func DoAble(openid string, taskID int) (v model.Volunteer, t model.Task, e error) {
-	v, err := getV(openid)
+func DoAble(openid string, taskID int) (v model.User, t model.Task, e error) {
+	v, err := getU(openid)
 	if err != nil {
 		return v, t, err
 	}

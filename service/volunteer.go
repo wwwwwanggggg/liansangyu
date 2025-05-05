@@ -40,11 +40,17 @@ func getV(openid string) (model.Volunteer, error) {
 
 // 作为接口暴露，完善个人信息之后使用
 func (Volunteer) Register(Openid string, info UVInfo) error {
-	_, err := getV(Openid)
-	if err != nil && !(err.Error() == "没有对应志愿者信息") {
+	u, err := getU(Openid)
+	if err != nil {
 		return err
-	} else if err == nil {
-		return errors.New("此微信号已经创建过志愿者身份了")
+	}
+
+	if u.IsElder {
+		return errors.New("老人身份和志愿者身份不能共存")
+	}
+
+	if u.IsVolunteer {
+		return errors.New("此账号已经注册过志愿者了")
 	}
 
 	// 序列化json不会出错的
@@ -59,6 +65,11 @@ func (Volunteer) Register(Openid string, info UVInfo) error {
 	if err := model.DB.Create(&v).Error; err != nil {
 		fmt.Println(err)
 		return errors.New("创建志愿者信息失败")
+	}
+
+	if err := model.DB.Table("users").Where("openid = ?", Openid).Update("is_volunteer", true).Error; err != nil {
+		fmt.Println(err)
+		return errors.New("更新用户信息失败")
 	}
 
 	return nil
@@ -137,7 +148,7 @@ func isParticipanted(Openid string, taskID int) (bool, error) {
 }
 
 func (Volunteer) Signin(Openid string, taskID int) error {
-	v, err := getV(Openid)
+	_, err := getV(Openid)
 
 	if err != nil {
 		return err
@@ -146,6 +157,10 @@ func (Volunteer) Signin(Openid string, taskID int) error {
 	t, err := getTask(taskID)
 	if err != nil {
 		return err
+	}
+
+	if t.Already >= t.Number {
+		return errors.New("此任务人数已满")
 	}
 
 	isP, err := isParticipanted(Openid, taskID)
@@ -161,15 +176,36 @@ func (Volunteer) Signin(Openid string, taskID int) error {
 		return errors.New("任务即将开始或已经开始,无法报名")
 	}
 
-	if err := model.DB.Model(&Task{}).Association("Participants").Append(&v); err != nil {
-		fmt.Println(err)
-		return errors.New("报名任务失败")
+	if err := model.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&model.TaskParticipants{
+			Taskid:          int64(taskID),
+			VolunteerOpenid: Openid,
+		}).Error; err != nil {
+			return errors.New("报名失败")
+		}
+
+		if err := tx.Model(&t).Update("already", t.Already+1).Error; err != nil {
+			fmt.Println(err)
+			return errors.New("更新任务失败")
+		}
+		return nil
+
+	}); err != nil {
+		return err
 	}
 	return nil
 }
 
 func (Volunteer) Signout(Openid string, taskID int) error {
-	v, err := getV(Openid)
+	_, err := getV(Openid)
+	if err != nil {
+		return err
+	}
+
+	t, err := getTask(taskID)
+	if err != nil {
+		return err
+	}
 
 	if err != nil {
 		return err
@@ -183,9 +219,23 @@ func (Volunteer) Signout(Openid string, taskID int) error {
 		return errors.New("您没有参加这个任务,无法退出报名")
 	}
 
-	if err := model.DB.Model(&model.Task{}).Association("Participants").Delete(&v); err != nil {
-		fmt.Println(err)
-		return errors.New("退出报名失败")
+	if err := model.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Delete(
+			&model.TaskParticipants{},
+			"task_id = ? AND volunteer_openid = ?",
+			taskID,
+			Openid,
+		).Error; err != nil {
+			return fmt.Errorf("退出报名失败: %v", err)
+		}
+		if err := tx.Model(&model.Task{}).Where("id = ?", taskID).Update("already", t.Already-1).Error; err != nil {
+			return errors.New("更新任务信息失败")
+		}
+
+		return nil
+
+	}); err != nil {
+		return err
 	}
 	return nil
 }
@@ -211,11 +261,42 @@ func isInOrganization(Openid string, OName string) (bool, error) {
 	return false, nil
 }
 
+func elderIsInOrganization(Openid string, OName string) (bool, error) {
+
+	v, err := getE(Openid)
+
+	if err != nil {
+		return false, err
+	}
+
+	o, err := getO(OName)
+
+	if err != nil {
+		return false, err
+	}
+
+	index := Find(o.Elder, v, Eequals)
+	if index != -1 {
+		return true, nil
+	}
+	return false, nil
+}
+
 func (Volunteer) Join(Openid string, OName string) error {
-	v, err := getV(Openid)
+	_, err := getV(Openid)
 	if err != nil {
 		return err
 	}
+
+	o, err := getO(OName)
+
+	if o.Openid == Openid {
+		return errors.New("您是这个组织的创建者")
+	}
+	if err != nil {
+		return err
+	}
+
 	isO, err := isInOrganization(Openid, OName)
 	if err != nil {
 		return err
@@ -225,7 +306,10 @@ func (Volunteer) Join(Openid string, OName string) error {
 		return errors.New("您已经加入这个组织了")
 	}
 
-	if err := model.DB.Model(&model.Organization{}).Association("Volunteer").Append(&v); err != nil {
+	if err := model.DB.Model(&model.OrganizationVolunteers{}).Create(&model.OrganizationVolunteers{
+		OrganizationOpenid: o.Openid,
+		VolunteerOpenid:    Openid,
+	}).Error; err != nil {
 		fmt.Println(err)
 		return errors.New("加入组织失败")
 	}
@@ -239,6 +323,11 @@ func (Volunteer) Leave(Openid string, OName string) error {
 		return err
 	}
 
+	o, err := getO(OName)
+	if err != nil {
+		return err
+	}
+
 	isO, err := isInOrganization(Openid, OName)
 	if err != nil {
 		return err
@@ -248,7 +337,7 @@ func (Volunteer) Leave(Openid string, OName string) error {
 		return errors.New("您没有加入这个组织,无法退出")
 	}
 
-	if err := model.DB.Model(&model.Organization{}).Association("Volunteer").Delete(&v); err != nil {
+	if err := model.DB.Model(&model.OrganizationVolunteers{}).Where("organization_openid = ? AND volunteer_openid = ?", o.Openid, Openid).Delete(&v); err != nil {
 		fmt.Println(err)
 		return errors.New("退出组织失败")
 	}
@@ -263,6 +352,16 @@ func (Volunteer) Checkin(Openid string, taskID int) error {
 	if err != nil {
 		return err
 	}
+
+	task, err := getTask(taskID)
+	if err != nil {
+		return err
+	}
+
+	if !(t.After(*task.Starttime) && t.Before(task.Endtime.Add(time.Hour))) {
+		return errors.New("您不在任务开始之后，结束一小时之内签到")
+	}
+
 	isP, err := isParticipanted(Openid, taskID)
 	if err != nil {
 		return err
@@ -398,7 +497,7 @@ func (Volunteer) GetTaskList(openid string, loc Location) (Resp, error) {
 	}
 
 	var tasks []model.Task
-	if err := model.DB.Preload("Participants").Find(&tasks).Error; err != nil {
+	if err := model.DB.Find(&tasks).Error; err != nil {
 		fmt.Println(err)
 		return Resp{}, errors.New("查询任务失败")
 	}

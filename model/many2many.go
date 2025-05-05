@@ -30,6 +30,6 @@ type OrganizationElders struct {
 type TaskParticipants struct {
 	Task            Task      `gorm:"foreignKey:Taskid;reference:ID"`
 	Volunteer       Volunteer `gorm:"foreignKey:VolunteerOpenid;reference:Openid"`
-	Taskid          int64
-	VolunteerOpenid string `gorm:"not null;type:VARCHAR(191)"`
+	Taskid          int64     `gorm:"column:task_id"`
+	VolunteerOpenid string    `gorm:"not null;type:VARCHAR(191)"`
 }

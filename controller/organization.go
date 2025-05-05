@@ -9,10 +9,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type Elder struct{}
+type Organization struct {
+}
 
-func (Elder) Register(c *gin.Context) {
-	var info service.UpdateEInfo
+func (Organization) Register(c *gin.Context) {
+	var info service.UpdateOInfo
 	if err := c.ShouldBindJSON(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
@@ -24,16 +25,17 @@ func (Elder) Register(c *gin.Context) {
 		return
 	}
 
-	err := srv.Elder.Register(openid, info)
+	err := srv.Organization.Register(openid, info)
 	if err != nil {
 		c.Error(common.ErrNew(err, common.SysErr))
 		return
 	}
-	c.JSON(http.StatusCreated, ResponseNew(c, nil, "注册成功"))
+
+	c.JSON(http.StatusOK, ResponseNew(c, nil, "成功注册"))
 }
 
-func (Elder) Update(c *gin.Context) {
-	var info service.UpdateEInfo
+func (Organization) Update(c *gin.Context) {
+	var info service.UpdateOInfo
 	if err := c.ShouldBindJSON(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
@@ -45,76 +47,61 @@ func (Elder) Update(c *gin.Context) {
 		return
 	}
 
-	err := srv.Elder.Update(openid, info)
+	err := srv.Organization.Update(openid, info)
 	if err != nil {
 		c.Error(common.ErrNew(err, common.SysErr))
 		return
 	}
-	c.JSON(http.StatusCreated, ResponseNew(c, nil, "更新成功"))
+
+	c.JSON(http.StatusOK, ResponseNew(c, nil, "成功更新"))
 }
 
-func (Elder) Join(c *gin.Context) {
+func (Organization) Decide(c *gin.Context) {
 	var info struct {
-		OrganizationName string `json:"organization_name" binding:"required"`
+		Users []string `json:"users" binding:"required,dive"`
 	}
-
 	if err := c.ShouldBindJSON(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
 	}
-
 	openid, ok := GetOpenid(c, "user-session")
 	if !ok {
 		c.Error(common.ErrNew(errors.New("登录状态有问题"), common.AuthErr))
 		return
 	}
 
-	err := srv.Elder.Join(openid, info.OrganizationName)
+	err := srv.Organization.Decide(openid, info.Users)
 	if err != nil {
 		c.Error(common.ErrNew(err, common.SysErr))
 		return
 	}
 
-	c.JSON(http.StatusOK, ResponseNew(c, nil, "加入成功"))
+	c.JSON(http.StatusOK, ResponseNew(c, nil, "成功修改"))
 }
 
-func (Elder) Leave(c *gin.Context) {
-	var info struct {
-		OrganizationName string `json:"organization_name" binding:"required"`
-	}
-
-	if err := c.ShouldBindJSON(&info); err != nil {
-		c.Error(common.ErrNew(err, common.ParamErr))
-		return
-	}
-
+func (Organization) Get(c *gin.Context) {
 	openid, ok := GetOpenid(c, "user-session")
 	if !ok {
 		c.Error(common.ErrNew(errors.New("登录状态有问题"), common.AuthErr))
 		return
 	}
 
-	err := srv.Elder.Leave(openid, info.OrganizationName)
+	o, err := srv.Organization.Get(openid)
 	if err != nil {
 		c.Error(common.ErrNew(err, common.SysErr))
 		return
 	}
 
-	c.JSON(http.StatusOK, ResponseNew(c, nil, "加入成功"))
+	c.JSON(http.StatusOK, ResponseNew(c, o, "查询成功"))
 }
 
-func (Elder) Decide(c *gin.Context) {
-	openid, ok := GetOpenid(c, "user-session")
-	if !ok {
-		c.Error(common.ErrNew(errors.New("登录状态有问题"), common.AuthErr))
-		return
-	}
+func (Organization) GetList(c *gin.Context) {
+	data, err := srv.Organization.GetList()
 
-	err := srv.Elder.Decide(openid)
 	if err != nil {
 		c.Error(common.ErrNew(err, common.SysErr))
 		return
 	}
 
-	c.JSON(http.StatusOK, ResponseNew(c, nil, "更新成功"))
+	c.JSON(http.StatusOK, ResponseNew(c, data, "查询成功"))
 }

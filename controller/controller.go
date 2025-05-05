@@ -6,6 +6,7 @@ type Controller struct {
 	Task
 	Elder
 	Monitor
+	Organization
 }
 
 func New() *Controller {

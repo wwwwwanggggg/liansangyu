@@ -16,6 +16,11 @@ type UpdateUserInfo struct {
 	Phone string `json:"phone" binding:"len=11,numeric"`
 }
 
+func (User) Login(openid string) (model.User, error) {
+	u, err := getU(openid)
+	return u, err
+}
+
 func getU(openid string) (model.User, error) {
 	var u model.User
 	if err := model.DB.Where("openid = ?", openid).First(&u).Error; errors.Is(err, gorm.ErrRecordNotFound) {
@@ -38,6 +43,7 @@ func (User) Register(openid string, info UpdateUserInfo) error {
 	}
 	copier.Copy(&u, info)
 
+	u.Openid = openid
 	if err := model.DB.Create(&u).Error; err != nil {
 		fmt.Println(err)
 		return errors.New("创建用户失败")
@@ -64,35 +70,55 @@ func (User) Update(openid string, info UpdateUserInfo) error {
 
 	这个返回所有相关的个人信息，建议前端写一个定时触发的函数，专门调用这个接口，
 */
-func (User) Get(openid string) (u model.User, v model.Volunteer, m model.Monitor, o model.Organization, e error) {
+type UserInfo struct {
+	User         model.User         `json:"user"`
+	Volunteer    model.Volunteer    `json:"volunteer"`
+	Elder        model.Elder        `json:"elder"`
+	Monitor      model.Monitor      `json:"monitor"`
+	Organization model.Organization `json:"organization"`
+}
+
+func getM(openid string) (model.Monitor, error) {
+	var m model.Monitor
+	if err := model.DB.Where("openid = ?", openid).First(&m).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+		return m, errors.New("不存在监护人信息")
+	} else if err != nil {
+		fmt.Println(err)
+		return m, errors.New("查询监护人信息出错")
+	}
+	return m, nil
+}
+
+func (User) Get(openid string) (UserInfo, error) {
+	var res UserInfo
 	u, err := getU(openid)
 	if err != nil {
-		e = err
-		return
+		return res, err
 	}
-	db := model.DB.Model(&u)
-	if u.IsVolunteer {
-		db.Preload("Volunteer")
-		vo, err := getV("openid")
-		if err != nil {
-			e = err
-			return
-		}
-		v = vo
+	e, err := getE(openid)
+	if err != nil && err.Error() != "没有相应老人信息" {
+		return res, err
 	}
-	if u.IsElder {
-		db.Preload("Elder")
+	v, err := getV(openid)
+	if err != nil && err.Error() != "没有对应志愿者信息" {
+		return res, err
 	}
-	if u.IsMonitor {
-		db.Preload("Monitor")
+
+	m, err := getM(openid)
+	if err != nil && err.Error() != "不存在监护人信息" {
+		return res, err
 	}
-	if u.IsOrganization {
-		db.Preload("Organization")
+
+	o, err := getOO(openid)
+	if err != nil && err.Error() != "没有相应组织信息" {
+		return res, err
 	}
-	if err := db.First(&u).Error; err != nil {
-		fmt.Println(err)
-		e = errors.New("查询失败")
-		return
-	}
-	return
+
+	res.User = u
+	res.Volunteer = v
+	res.Monitor = m
+	res.Organization = o
+	res.Elder = e
+
+	return res, nil
 }

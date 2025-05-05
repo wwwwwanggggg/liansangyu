@@ -11,43 +11,62 @@ func InitRouter(r *gin.Engine) {
 	r.Use(middleware.GinLogger(), middleware.GinRecovery(true))
 	apiRouter := r.Group("/api")
 	{
-		apiRouter.Use(middleware.CheckRole(1))
-		// userRouter := apiRouter.Group("user")
-		// {
-		// 	userRouter.POST("/", ctr.User.Login) // 登录
+		apiRouter.POST("/", ctr.User.Login)
 
-		// userRouter.Use(middleware.CheckRole(1))
-		// 	userRouter.PUT("/:type", ctr.User.Update)
+		ur := apiRouter.Group("user")
+		{
+			ur.POST("/", ctr.User.Register)
+			ur.PUT("/", ctr.User.Update)
+			ur.GET("/", ctr.User.Get)
+		}
 
-		// 	vRouter := userRouter.Group("/volunteer")
-		// 	{
-		// 		vRouter.PUT("/", ctr.Volunteer.Update)
-		// 		vRouter.POST("/signup/:id", ctr.Volunteer.SignUp)     // 报名
-		// 		vRouter.DELETE("/signout/:id", ctr.Volunteer.SignOut) // 退选
-		// 		vRouter.POST("/in/:id", ctr.Volunteer.Checkin)
-		// 		vRouter.POST("/out/:id", ctr.Volunteer.Checkout)
-		// 		vRouter.GET("/tasks", ctr.Volunteer.GetTasks) // 获取任务
-		// 		vRouter.GET("/", ctr.Volunteer.GetInfo)       // 获取志愿者信息
-		// 	}
-		// 	eRouter := userRouter.Group("/elder")
-		// 	{
-		// 		eRouter.PUT("/", ctr.Elder.Update)
-		// 		eRouter.GET("/monitor", ctr.Elder.GetMonitor) // 获取被监护人信息
-		// 		eRouter.GET("/")
-		// 	}
-		// 	mRouter := userRouter.Group("/monitor")
-		// 	{
-		// 		mRouter.PUT("/", ctr.Monitor.Add)
-		// 		mRouter.DELETE("/", ctr.Monitor.DeMonitor)
-		// 	}
+		tr := apiRouter.Group("task")
+		tr.Use(middleware.CheckRole(1))
+		{
+			tr.POST("/:type", ctr.Task.New)
+			tr.PUT("/:id", ctr.Task.Update)
+			tr.DELETE("/:id", ctr.Task.Delete)
+		}
 
-		// }
-		// tRouter := apiRouter.Group("task")
-		// {
-		// 	tRouter.Use(middleware.CheckRole(2))
-		// 	tRouter.POST("/", ctr.Task.New) // 创建任务
-		// 	tRouter.PUT("/:id", ctr.Task.Update)
-		// 	tRouter.DELETE("/:id", ctr.Task.Delete)
-		// }
+		vr := apiRouter.Group("volunteer")
+		vr.POST("/", ctr.Volunteer.Register)
+		vr.Use(middleware.CheckRole(1))
+		{
+			vr.PUT("/", ctr.Volunteer.Update)
+			vr.POST("/signin/:id", ctr.Volunteer.Signin)
+			vr.DELETE("/signout/:id", ctr.Volunteer.Signout)
+			vr.POST("/join", ctr.Volunteer.Join)
+			vr.DELETE("/leave", ctr.Volunteer.Leave)
+			vr.POST("/checkin/:id", ctr.Volunteer.Checkin)
+			vr.DELETE("/checkout/:id", ctr.Volunteer.Checkout)
+			vr.GET("/tasks", ctr.Volunteer.GetTaskList)
+		}
+
+		er := apiRouter.Group("elder")
+		{
+			er.POST("/", ctr.Elder.Register)
+			er.PUT("/", ctr.Elder.Update)
+			er.POST("/join", ctr.Elder.Join)
+			er.DELETE("/leave", ctr.Elder.Leave)
+			er.POST("/decide", ctr.Elder.Decide)
+		}
+
+		or := apiRouter.Group("organization")
+		or.GET("/list", ctr.Organization.GetList)
+		or.Use(middleware.CheckRole(1))
+		{
+			or.POST("/", ctr.Organization.Register)
+			or.PUT("/", ctr.Organization.Update)
+			or.POST("/decide", ctr.Organization.Decide)
+			or.GET("/", ctr.Organization.Get)
+		}
+
+		mr := apiRouter.Group("/monitor")
+		mr.Use(middleware.CheckRole(1))
+		{
+			mr.POST("/", ctr.Monitor.Add)
+			mr.DELETE("/", ctr.Monitor.Minus)
+		}
+
 	}
 }

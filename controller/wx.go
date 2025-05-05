@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"liansangyu/config"
 	"net/http"
 )
@@ -18,7 +19,7 @@ type WxJSON struct {
 	ErrMsg     string `json:"errmsg"`
 }
 
-func code2session(code string) (string, error) {
+func code2openid(code string) (string, error) {
 
 	if !online {
 		return code, nil
@@ -42,15 +43,14 @@ func code2session(code string) (string, error) {
 
 	defer resp.Body.Close()
 
-	n := make([]byte, 1024)
-
-	_, err = resp.Body.Read(n)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", errors.New("读取响应失败")
+		return "", errors.New("读取响应体失败")
 	}
 
 	var info WxJSON
-	if err := json.Unmarshal(n, &info); err != nil {
+	if err := json.Unmarshal(body, &info); err != nil {
+		fmt.Println(err)
 		return "", errors.New("解析json失败")
 	}
 

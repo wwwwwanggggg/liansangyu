@@ -8,7 +8,6 @@ import (
 )
 
 type Service struct {
-	Hello
 	User
 	Volunteer
 	Task
@@ -24,6 +23,8 @@ const (
 )
 
 var Vequals = func(a, b model.Volunteer) bool { return a.Openid == b.Openid }
+
+var Eequals = func(a, b model.Elder) bool { return a.Openid == b.Openid }
 
 func New() *Service {
 	service := &Service{}
@@ -45,6 +46,20 @@ func getO(OName string) (model.Organization, error) {
 
 	if err := model.DB.Preload("Admin").Preload("Volunteer").Preload("Elder").
 		Where("name = ?", OName).
+		First(&o).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+		return o, errors.New("没有相应组织信息")
+	} else if err != nil {
+		return o, errors.New("查找组织信息失败")
+	}
+
+	return o, nil
+}
+
+func getOO(openid string) (model.Organization, error) {
+	var o model.Organization
+
+	if err := model.DB.Preload("Admin").Preload("Volunteer").Preload("Elder").
+		Where("openid = ?", openid).
 		First(&o).Error; errors.Is(err, gorm.ErrRecordNotFound) {
 		return o, errors.New("没有相应组织信息")
 	} else if err != nil {
