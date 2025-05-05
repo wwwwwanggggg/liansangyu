@@ -194,11 +194,19 @@ func (Volunteer) Checkout(c *gin.Context) {
 }
 
 func (Volunteer) GetTaskList(c *gin.Context) {
-	var loc service.Location
+	var info struct {
+		Longitude float64 `form:"longitude"`
+		Latitude  float64 `form:"latitude"`
+	}
 
-	if err := c.ShouldBindJSON(&loc); err != nil {
+	if err := c.ShouldBindQuery(&info); err != nil {
 		c.Error(common.ErrNew(err, common.ParamErr))
 		return
+	}
+
+	loc := service.Location{
+		Longitide: info.Longitude,
+		Latitude:  info.Latitude,
 	}
 
 	openid, ok := GetOpenid(c, "user-session")

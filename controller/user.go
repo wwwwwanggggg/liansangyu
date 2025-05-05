@@ -100,3 +100,9 @@ func (User) Get(c *gin.Context) {
 
 	c.JSON(http.StatusOK, ResponseNew(c, info, "查询成功"))
 }
+
+func (User) Logout(c *gin.Context) {
+	SessionDelete(c, "user-session")
+
+	c.JSON(http.StatusOK, ResponseNew(c, nil, "退出登录"))
+}

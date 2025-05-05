@@ -492,7 +492,7 @@ func (h ByNumber) Less(i, j int) bool {
 
 func (Volunteer) GetTaskList(openid string, loc Location) (Resp, error) {
 	v, err := getV(openid)
-	if err != nil {
+	if err != nil && err.Error() != "没有对应志愿者信息" {
 		return Resp{}, err
 	}
 

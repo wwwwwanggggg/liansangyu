@@ -12,6 +12,7 @@ func InitRouter(r *gin.Engine) {
 	apiRouter := r.Group("/api")
 	{
 		apiRouter.POST("/", ctr.User.Login)
+		apiRouter.DELETE("/", ctr.User.Logout)
 
 		ur := apiRouter.Group("user")
 		{

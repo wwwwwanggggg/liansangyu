@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-var online = false
+var online = true
 
 type WxJSON struct {
 	Openid     string `json:"openid"`
