@@ -17,8 +17,10 @@ func InitRouter(r *gin.Engine) {
 		ur := apiRouter.Group("user")
 		{
 			ur.POST("/", ctr.User.Register)
+			ur.Use(middleware.CheckRole(1))
 			ur.PUT("/", ctr.User.Update)
 			ur.GET("/", ctr.User.Get)
+			ur.GET("/list", ctr.User.GetDecideList)
 		}
 
 		tr := apiRouter.Group("task")

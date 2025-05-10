@@ -49,7 +49,7 @@ func (Monitor) Add(openid string, elderPhone string) error {
 	}
 
 	if err := model.DB.Transaction(func(tx *gorm.DB) error {
-		if err := model.DB.Model(&u).Update("is_monitor", true).Error; err != nil {
+		if err := model.DB.Table("users").Where("openid = ?", u.Openid).Update("is_monitor", true).Error; err != nil {
 			fmt.Println(err)
 			return errors.New("更新用户信息出错")
 		}

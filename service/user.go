@@ -122,3 +122,74 @@ func (User) Get(openid string) (UserInfo, error) {
 
 	return res, nil
 }
+
+type DecideInfo struct {
+	Openid   string `json:"openid"`
+	Name     string `json:"name"`
+	Phone    string `json:"phone"`
+	InfoType string `json:"info_type"`
+}
+
+func (User) GetDecideList(openid string) ([]DecideInfo, error) {
+	u, err := getU(openid)
+	r := []DecideInfo{}
+	if err != nil {
+		return r, err
+	}
+
+	if u.IsElder {
+		var m model.Monitor
+		if err := model.DB.Model(&model.Monitor{}).Preload("User").Where("elder_openid = ?", u.Openid).First(&m).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+			return r, errors.New("没有相应监护人数据")
+		} else if err != nil {
+			return r, errors.New("查询信息失败")
+		}
+
+		r = append(r, DecideInfo{
+			Openid:   m.Openid,
+			Phone:    m.User.Phone,
+			Name:     m.User.Name,
+			InfoType: "老人-监护人",
+		})
+
+		return r, nil
+	} else if u.IsOrganization {
+		var o model.Organization
+		if err := model.DB.
+			Model(&model.Organization{}).
+			Preload("Volunteer").
+			Preload("Elder").Where("openid = ?", openid).First(&o).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+			return r, errors.New("没有相应组织信息")
+		} else if err != nil {
+			return r, errors.New("查询信息失败")
+		}
+
+		for _, v := range o.Volunteer {
+			u, err := getU(v.Openid)
+			if err != nil {
+				return []DecideInfo{}, err
+			}
+			r = append(r, DecideInfo{
+				Openid:   u.Openid,
+				Phone:    u.Phone,
+				Name:     u.Name,
+				InfoType: "组织-志愿者",
+			})
+		}
+
+		for _, e := range o.Elder {
+			u, err := getU(e.Openid)
+
+			if err != nil {
+				return []DecideInfo{}, err
+			}
+			r = append(r, DecideInfo{
+				Openid:   u.Openid,
+				Phone:    u.Phone,
+				Name:     u.Name,
+				InfoType: "组织-老人",
+			})
+		}
+	}
+	return r, nil
+}

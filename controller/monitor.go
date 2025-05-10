@@ -3,6 +3,7 @@ package controller
 import (
 	"errors"
 	"liansangyu/common"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,6 +30,8 @@ func (Monitor) Add(c *gin.Context) {
 		c.Error(common.ErrNew(err, common.SysErr))
 		return
 	}
+
+	c.JSON(http.StatusOK, ResponseNew(c, nil, "添加成功"))
 }
 
 func (Monitor) Minus(c *gin.Context) {

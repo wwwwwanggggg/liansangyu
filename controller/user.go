@@ -106,3 +106,19 @@ func (User) Logout(c *gin.Context) {
 
 	c.JSON(http.StatusOK, ResponseNew(c, nil, "退出登录"))
 }
+
+func (User) GetDecideList(c *gin.Context) {
+	openid, ok := GetOpenid(c, "user-session")
+	if !ok {
+		c.Error(common.ErrNew(errors.New("登录状态有问题"), common.AuthErr))
+		return
+	}
+
+	info, err := srv.User.GetDecideList(openid)
+	if err != nil {
+		c.Error(common.ErrNew(err, common.SysErr))
+		return
+	}
+
+	c.JSON(http.StatusOK, ResponseNew(c, info, "查询成功"))
+}
