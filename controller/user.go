@@ -23,6 +23,7 @@ func (User) Login(c *gin.Context) {
 	}
 
 	openid, err := code2openid(info.Code)
+	fmt.Println(err)
 	if err != nil {
 		c.Error(common.ErrNew(err, common.AuthErr))
 		return

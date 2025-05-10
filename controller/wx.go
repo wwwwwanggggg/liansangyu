@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-var online = false
+var online = (config.Config.Online != "no")
 
 type WxJSON struct {
 	Openid     string `json:"openid"`
@@ -20,6 +20,7 @@ type WxJSON struct {
 }
 
 func code2openid(code string) (string, error) {
+	fmt.Println(config.Config.Online)
 
 	if !online {
 		return code, nil

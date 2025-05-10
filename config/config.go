@@ -21,6 +21,7 @@ var Config struct {
 	LogLevel     string
 	WxAppID      string
 	WxAppSecret  string
+	Online       string
 }
 
 func envOr(env string, or string) string {
@@ -50,4 +51,5 @@ func initConfig() {
 	Config.LogLevel = envOr("APP_LOG_LEVEL", "info")
 	Config.WxAppID = envOr("WX_APP_ID", "")
 	Config.WxAppSecret = envOr("WX_APP_SECRET", "")
+	Config.Online = envOr("ONLINE", "no")
 }

@@ -494,15 +494,15 @@ func (Volunteer) GetTaskList(openid string, loc Location) (Resp, error) {
 	}
 
 	var tasks []model.Task
-	if err := model.DB.Find(&tasks).Error; err != nil {
+	if err := model.DB.Model(&model.Task{}).Preload("Participants").Find(&tasks).Error; err != nil {
 		fmt.Println(err)
 		return Resp{}, errors.New("查询任务失败")
 	}
 	r := Resp{}.New()
 	sort.Sort(ByNumber(tasks))
+	noLoc := false
 	if loc.Latitude == 0 || loc.Longitide == 0 {
-		r.Far = tasks
-		return r, nil
+		noLoc = true
 	}
 
 	for _, t := range tasks {
@@ -514,6 +514,11 @@ func (Volunteer) GetTaskList(openid string, loc Location) (Resp, error) {
 			r.Full = append(r.Full, t)
 			continue
 		}
+		if noLoc {
+			r.Far = append(r.Far, t)
+			continue
+		}
+
 		_, km := haversine.Distance(haversine.Coord{
 			Lat: loc.Latitude,
 			Lon: loc.Longitide,
