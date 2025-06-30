@@ -4,7 +4,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: dockerfile
     ports:
       - "8080:8080"
     env_file:
@@ -22,7 +22,7 @@ services:
       MYSQL_USER: root
       MYSQL_PASSWORD: 123456
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
 

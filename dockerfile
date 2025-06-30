@@ -1,37 +1,40 @@
-# 使用官方 Go 镜像作为基础镜像
-FROM golang:1.24 AS builder
+# 第一阶段：构建环境（基于 Ubuntu 22.04）
+FROM ubuntu:22.04 AS builder
 
-# 设置 Go 模块代理（注意等号后不能有空格！）
+# 安装 Go 工具链和必要依赖
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    golang-1.24 \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# 设置 Go 环境变量
 ENV GOPROXY=https://goproxy.io,direct \
-    GO111MODULE=on
+    GO111MODULE=on \
+    CGO_ENABLED=0
 
-# 设置工作目录
+# 复制代码并构建
 WORKDIR /app
-
-# 将当前目录的所有文件复制到容器中
 COPY . .
+RUN go mod tidy && \
+    go build -tags netgo,osusergo -ldflags="-s -w" -o main .
 
-# 下载依赖并构建应用程序
-RUN go mod tidy && go build -o main .
+# 第二阶段：运行环境（基于 Ubuntu 22.04）
+FROM ubuntu:22.04
 
-# 使用更小的基础镜像运行应用程序
-FROM debian:bullseye-slim
+# 安装运行时依赖（如 MySQL 客户端）
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    default-mysql-client \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-# 设置工作目录
+# 复制二进制文件和配置文件
 WORKDIR /app
-
-# 安装必要的依赖项（如 MySQL 客户端）
-RUN apt-get update && apt-get install -y mysql-client && rm -rf /var/lib/apt/lists/*
-
-# 复制构建的二进制文件和环境变量文件
 COPY --from=builder /app/main .
 COPY .env .
 
-# 暴露应用程序的端口（根据你的应用程序监听的端口修改）
+# 暴露端口并设置启动命令
 EXPOSE 8080
-
-# 设置环境变量（可选）
 ENV ENV_FILE_PATH=.env
-
-# 启动应用程序
-CMD ["./main"]
+CMD ["./main

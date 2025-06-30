@@ -14,6 +14,9 @@ func InitRouter(r *gin.Engine) {
 		apiRouter.POST("/", ctr.User.Login)
 		apiRouter.DELETE("/", ctr.User.Logout)
 
+		// 测试直接登录
+		apiRouter.GET("/test", ctr.TestAPI.DirectLogin)
+
 		ur := apiRouter.Group("user")
 		{
 			ur.POST("/", ctr.User.Register)

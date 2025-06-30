@@ -14,6 +14,7 @@ type Service struct {
 	Elder
 	Monitor
 	Organization
+	TestAPI
 }
 
 const (

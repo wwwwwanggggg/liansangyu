@@ -7,6 +7,7 @@ type Controller struct {
 	Elder
 	Monitor
 	Organization
+	TestAPI
 }
 
 func New() *Controller {
