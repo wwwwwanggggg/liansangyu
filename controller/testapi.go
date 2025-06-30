@@ -3,6 +3,7 @@ package controller
 import (
 	"errors"
 	"liansangyu/common"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,4 +21,6 @@ func (TestAPI) DirectLogin(c *gin.Context) {
 		Openid: code,
 		Level:  2,
 	})
+
+	c.JSON(http.StatusOK, ResponseNew(c, nil, "登录成功"))
 }
