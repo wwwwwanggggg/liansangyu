@@ -1,0 +1,128 @@
+{
+    "handlers": [
+        {
+            "title": "测试用户登录",
+            "method": "POST",
+            "path": "/api/",
+            "examples": [
+                {
+                    "header": {
+                        "Content-Type": "application/json"
+                    },
+                    "body": {
+                        "code": "normal-user"
+                    },
+                    "wanted": {
+                        "success": true,
+                        "data": {
+                            "openid": "",
+                            "createdAt": "0001-01-01T00:00:00Z",
+                            "updatedAt": "0001-01-01T00:00:00Z",
+                            "deletedAt": null,
+                            "name": "",
+                            "phone": "",
+                            "user_type": 0,
+                            "IsVolunteer": false,
+                            "IsElder": false,
+                            "IsMonitor": false,
+                            "IsOrganization": false
+                        },
+                        "message": "登录成功"
+                    },
+                    "wanted_code": 200
+                },
+                {
+                    "header": {
+                        "Content-Type": "application/json"
+                    },
+                    "body": {},
+                    "wanted": {
+                        "success": false,
+                        "message": "参数错误: Code为必填字段\n",
+                        "code": 3
+                    },
+                    "wanted_code": 200
+                }
+            ]
+        },
+        {
+            "title": "测试用户注册",
+            "method": "POST",
+            "path": "/api/user/",
+            "examples": [
+                {
+                    "header": {
+                        "Content-Type": "application/json"
+                    },
+                    "body": {
+                        "name": "test-user",
+                        "phone": "1234567890"
+                    },
+                    "wanted": {
+                        "success": false,
+                        "message": "参数错误: Phone长度必须是11个字符\n",
+                        "code": 3
+                    },
+                    "wanted_code": 200
+                },
+                {
+                    "header": {
+                        "Content-Type": "application/json"
+                    },
+                    "body": {
+                        "name": "test-user",
+                        "phone": "1234567890a"
+                    },
+                    "wanted": {
+                        "success": false,
+                        "message": "参数错误: Phone必须是一个有效的数值\n",
+                        "code": 3
+                    },
+                    "wanted_code": 200
+                },
+                {
+                    "header": {
+                        "Content-Type": "application/json"
+                    },
+                    "body": {
+                        "name": "test-user",
+                        "phone": "12345678901"
+                    },
+                    "wanted": {
+                        "success": true,
+                        "message": "注册成功"
+                    },
+                    "wanted_code": 201
+                },
+                {
+                    "header": {
+                        "Content-Type": "application/json"
+                    },
+                    "body": {
+                        "name": "test-user",
+                        "phone": "12345678901"
+                    },
+                    "wanted": {
+                        "success": false,
+                        "message": "系统错误: 此微信号已经注册过用户了\n",
+                        "code": 4
+                    },
+                    "wanted_code": 200
+                }
+            ]
+        },
+        {
+            "title": "测试更新用户信息",
+            "method": "PUT",
+            "path": "/api/user/",
+            "examples": [
+                {
+                    "header": {
+                        "Content-Type": "application/json"
+                    },
+                    "body": {}
+                }
+            ]
+        }
+    ]
+}

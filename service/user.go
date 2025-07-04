@@ -33,12 +33,30 @@ func getU(openid string) (model.User, error) {
 	return u, nil
 }
 
+func getUByPhone(phone string) (model.User, error) {
+	var u model.User
+	if err := model.DB.Where("phone = ?", phone).First(&u).Error; errors.Is(err, gorm.ErrRecordNotFound) {
+		return u, errors.New("没有相应用户信息")
+	} else if err != nil {
+		fmt.Println(err)
+		return u, errors.New("查询用户信息失败")
+	}
+
+	return u, nil
+}
+
 // 完善基本信息
 func (User) Register(openid string, info UpdateUserInfo) error {
 	u, err := getU(openid)
 	if err == nil {
 		return errors.New("此微信号已经注册过用户了")
 	} else if err.Error() != "没有相应用户信息" {
+		return err
+	}
+	_, err = getUByPhone(info.Phone)
+	if err == nil {
+		return errors.New("此手机号已经注册过用户了")
+	} else if err != nil && err.Error() != "没有相应用户信息" {
 		return err
 	}
 	copier.Copy(&u, info)

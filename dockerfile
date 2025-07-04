@@ -1,5 +1,5 @@
 # 第一阶段：构建环境（基于 Ubuntu 22.04）
-FROM ubuntu:22.04 AS builder
+FROM ubuntu:latest AS builder
 
 # 安装 Go 工具链和必要依赖
 RUN apt-get update && \
